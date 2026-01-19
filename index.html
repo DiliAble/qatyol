@@ -17,7 +17,7 @@
             align-items:center;justify-content:center;flex:1;
         }
 
-        /* Top Panels like Morse Trainer */
+        /* Status Panel */
         .panel {
             position: absolute;
             top: 12px;
@@ -51,42 +51,54 @@
 
         /* Temperature Circle */
         .temp-circle {
-            width:clamp(250px, 80vw, 450px);
-            height:clamp(250px, 80vw, 450px);
-            border-radius:50%;
-            background:#111;
-            border:clamp(12px, 4vw, 20px) solid #0f0;
-            box-shadow:0 0 80px #0f0;
-            display:flex;
+            /* Circle size logic */
+            width: clamp(250px, 80vw, 450px);
+            height: clamp(250px, 80vw, 450px);
+
+            /* Container Query definition: allows children to size relative to this box */
+            container-type: size;
+
+            border-radius: 50%;
+            background: #111;
+            border: clamp(12px, 4vw, 20px) solid #0f0;
+            box-shadow: 0 0 80px #0f0;
+
+            display: flex;
             flex-direction: column;
-            align-items:center;
-            justify-content:center;
-            transition:all 0.3s;
-            color:#0f0;
+            align-items: center;
+            justify-content: center;
+
+            transition: all 0.3s;
+            color: #0f0;
             position: relative;
         }
 
-        .temp-value {
-            /* Default size (approx 2x smaller than before) */
-            font-size: clamp(50px, 15vw, 110px);
-            font-weight: bold;
-            text-shadow: 0 0 20px #0f0;
-            line-height: 1;
-            margin-top: 10px;
-            transition: font-size 0.3s;
+        /* Wrapper to center the text group */
+        .temp-content-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            /* Adjust position slightly if needed */
+            padding-bottom: 5cqh;
         }
 
-        /* Class for 2-digit numbers (approx 3x smaller than original) */
-        .temp-value.small-text {
-            font-size: clamp(33px, 10vw, 150px);
+        .temp-value {
+            /* 32cqw means 32% of the circle's width.
+               This guarantees it fits whether the circle is 200px or 500px. */
+            font-size: 32cqw;
+            font-weight: bold;
+            text-shadow: 0 0 5cqw #0f0; /* Shadow scales too */
+            line-height: 1;
         }
 
         .temp-unit {
-            font-size: clamp(20px, 5vw, 40px);
-            position: absolute;
-            top: 25%;
-            right: 20%;
-            opacity: 0.8;
+            font-size: 12cqw; /* Relative to circle size */
+            margin-left: 1cqw;
+            /* Move unit up to look like superscript */
+            transform: translateY(-10cqw);
+            opacity: 0.9;
         }
 
         /* Offline State Styles */
@@ -105,7 +117,7 @@
             color: #f00;
         }
         body.offline .temp-value {
-            text-shadow: 0 0 20px #f00;
+            text-shadow: 0 0 5cqw #f00;
         }
 
         /* Loader */
@@ -113,8 +125,8 @@
             border: 8px solid rgba(0, 255, 0, 0.1);
             border-top: 8px solid #0f0;
             border-radius: 50%;
-            width: 80px;
-            height: 80px;
+            width: 20cqw; /* Loader scales with circle */
+            height: 20cqw;
             animation: spin 1s linear infinite;
             position: absolute;
         }
@@ -124,7 +136,7 @@
             100% { transform: rotate(360deg); }
         }
 
-        .hidden { display: none; }
+        .hidden { display: none !important; }
 
     </style>
 </head>
@@ -140,7 +152,8 @@
 
         <div class="temp-circle" id="temp-circle">
             <div class="loader" id="loader"></div>
-            <div id="temp-content" class="hidden" style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+
+            <div id="temp-content" class="temp-content-wrapper hidden">
                 <span id="temp-val" class="temp-value">--</span>
                 <span class="temp-unit">°C</span>
             </div>
@@ -167,11 +180,9 @@
                 document.body.classList.add('offline');
                 statusText.innerText = "OFFLINE";
 
-                // Hide loader, show dashes
                 loader.style.display = 'none';
                 tempContent.classList.remove('hidden');
                 tempVal.innerText = "--";
-                tempVal.classList.remove('small-text');
             }
         }
 
@@ -186,19 +197,9 @@
                 await new Promise(r => setTimeout(r, 500));
                 const temp = Math.floor(Math.random() * (55 - 50 + 1) + 50);
 
-                // Raqam uzunligini tekshirish (masalan, 10 dan katta yoki kichik -9 bo'lsa 2 xonali hisoblanadi)
-                // Yoki shunchaki string uzunligiga qarab
-                const tempStr = "+" + temp;
+                // Raqamni chiqarish
+                const tempStr = (temp > 0 ? "+" : "") + temp;
                 tempVal.innerText = tempStr;
-
-                // Agar raqam 2 xonali bo'lsa (masalan 50), "+" bilan birga uzunligi 3 bo'ladi.
-                // Agar 1 xonali bo'lsa (masalan 5), "+" bilan birga uzunligi 2 bo'ladi.
-                // Foydalanuvchi "2 xonali son" deganda qiymatni nazarda tutgan bo'lsa:
-                if (Math.abs(temp) >= 10) {
-                    tempVal.classList.add('small-text');
-                } else {
-                    tempVal.classList.remove('small-text');
-                }
 
                 tempContent.classList.remove('hidden');
             } catch (error) {
